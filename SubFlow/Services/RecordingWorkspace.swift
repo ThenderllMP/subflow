@@ -45,7 +45,7 @@ enum RecordingWorkspace {
         let home = FileManager.default.homeDirectoryForCurrentUser
         return home
             .appendingPathComponent("Movies", isDirectory: true)
-            .appendingPathComponent("MeetingFlow Recordings", isDirectory: true)
+            .appendingPathComponent("SubFlow Recordings", isDirectory: true)
     }()
 
     static func validateRoot(path: String) throws -> URL {
@@ -71,7 +71,7 @@ enum RecordingWorkspace {
         }
 
         let probeURL = rootURL.appendingPathComponent(
-            ".meetingflow-write-check-\(UUID().uuidString)",
+            ".subflow-write-check-\(UUID().uuidString)",
             isDirectory: false
         )
         do {
@@ -141,7 +141,7 @@ final class TranscriptDocumentWriter {
         self.fileURL = transcriptURL
 
         let initialText = """
-        MeetingFlow Meeting Transcript
+        SubFlow Meeting Transcript
         Session Folder: \(sessionURL.lastPathComponent)
         Mode: \(mode.displayName)
         Started: \(formatter.string(from: startedAt))

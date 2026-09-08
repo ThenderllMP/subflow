@@ -61,11 +61,11 @@ enum AppText {
     static func retry(_ language: AppLanguage) -> String { localized("Retry", "重试", language: language) }
     static func extracting(_ language: AppLanguage) -> String { localized("Extracting…", "正在解压中…", language: language) }
     static func chooseRecordingFolderTitle(_ language: AppLanguage) -> String { localized("Choose Recording Folder", "选择录制文件夹", language: language) }
-    static func firstTimeSetupTitle(_ language: AppLanguage) -> String { localized("MeetingFlow — First-time Setup", "MeetingFlow — 首次设置", language: language) }
+    static func firstTimeSetupTitle(_ language: AppLanguage) -> String { localized("SubFlow — First-time Setup", "SubFlow — 首次设置", language: language) }
     static func settingsWindowTitle(_ language: AppLanguage) -> String { localized("Settings", "设置", language: language) }
-    static func transcriptWindowTitle(_ language: AppLanguage) -> String { localized("MeetingFlow", "MeetingFlow", language: language) }
+    static func transcriptWindowTitle(_ language: AppLanguage) -> String { localized("SubFlow", "SubFlow", language: language) }
     static func downloadingStatus(_ language: AppLanguage) -> String { localized("Downloading", "正在下载", language: language) }
-    static func screenRecordingPermissionDenied(_ language: AppLanguage) -> String { localized("Screen recording permission is still not active. Open System Settings > Privacy & Security > Screen Recording, enable MeetingFlow, then quit and reopen the app.", "屏幕录制权限仍未生效。请前往系统设置 > 隐私与安全性 > 屏幕录制，开启 MeetingFlow，然后退出并重新打开应用。", language: language) }
+    static func screenRecordingPermissionDenied(_ language: AppLanguage) -> String { localized("Screen recording permission is still not active. Open System Settings > Privacy & Security > Screen Recording, enable SubFlow, then quit and reopen the app.", "屏幕录制权限仍未生效。请前往系统设置 > 隐私与安全性 > 屏幕录制，开启 SubFlow，然后退出并重新打开应用。", language: language) }
     static func noDisplayFound(_ language: AppLanguage) -> String { localized("No display found for screen capture", "未找到可用于屏幕捕获的显示器", language: language) }
     static func couldNotStartScreenRecording(_ language: AppLanguage) -> String { localized("Could not start screen recording", "无法开始屏幕录制", language: language) }
     static func audioFormatUnavailable(_ language: AppLanguage) -> String { localized("Audio format is unavailable", "音频格式不可用", language: language) }

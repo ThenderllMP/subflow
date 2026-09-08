@@ -16,5 +16,5 @@
 
 ## 4. Validation
 
-- [x] 4.1 Add or update tests for recording preference persistence, session folder creation, transcript export toggling, and capture-mode gating, and verify `xcodebuild test -project MeetingFlow.xcodeproj -scheme MeetingFlowTests -destination 'platform=macOS'` passes.
-- [x] 4.2 Run a clean app build and verify `xcodebuild build -project MeetingFlow.xcodeproj -scheme MeetingFlow -destination 'platform=macOS' -configuration Debug` succeeds.
+- [x] 4.1 Add or update tests for recording preference persistence, session folder creation, transcript export toggling, and capture-mode gating, and verify `xcodebuild test -project SubFlow.xcodeproj -scheme SubFlowTests -destination 'platform=macOS'` passes.
+- [x] 4.2 Run a clean app build and verify `xcodebuild build -project SubFlow.xcodeproj -scheme SubFlow -destination 'platform=macOS' -configuration Debug` succeeds.

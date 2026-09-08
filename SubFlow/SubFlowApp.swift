@@ -2,7 +2,7 @@ import SwiftUI
 import Translation
 
 @main
-struct MeetingFlowApp: App {
+struct SubFlowApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "captions.bubble", accessibilityDescription: "MeetingFlow")
+            button.image = NSImage(systemSymbolName: "captions.bubble", accessibilityDescription: "SubFlow")
             button.action = #selector(togglePopover)
             button.target = self
         }
@@ -98,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else if let button = statusItem.button {
             button.image = NSImage(
                 systemSymbolName: viewModel.isRecording ? "captions.bubble.fill" : "captions.bubble",
-                accessibilityDescription: "MeetingFlow"
+                accessibilityDescription: "SubFlow"
             )
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }

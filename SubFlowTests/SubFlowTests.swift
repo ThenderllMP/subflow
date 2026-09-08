@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import MeetingFlow
+@testable import SubFlow
 
 // MARK: - Integration Tests
 

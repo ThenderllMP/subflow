@@ -1,10 +1,10 @@
-# MeetingFlow Project Memory
+# SubFlow Project Memory
 
 ## Project Overview
 
-MeetingFlow is a macOS SwiftUI app for real-time caption translation and meeting recording. It captures system audio via ScreenCaptureKit, transcribes speech using Moonshine ASR (on-device), and translates EN→ZH-Hans using Apple's Translation framework. Captions are displayed in a floating transparent overlay panel (NSPanel).
+SubFlow is a macOS SwiftUI app for real-time caption translation. It captures system audio via ScreenCaptureKit, transcribes speech using Moonshine ASR (on-device), and translates EN→ZH-Hans using Apple's Translation framework. Captions are displayed in a floating transparent overlay panel (NSPanel).
 
-- **GitHub repo**: `ThenderllMP/subflow`
+- **GitHub repo**: `Jinsong-Zhou/subflow`
 - **Test count**: 76 tests (all passing)
 - **Project generation**: XcodeGen (`project.yml`)
 
@@ -54,7 +54,7 @@ The pipeline is intentionally simple — ~30 lines of core logic:
 - Positioned at screen bottom center, 60pt from bottom edge
 
 ### Model Migration
-- `MoonshineTranscriptionService.load()` auto-migrates models from old paths `TranslatedCaption/MoonshineModels/` and `SubFlow/MoonshineModels/` to `MeetingFlow/MoonshineModels/`
+- `MoonshineTranscriptionService.load()` auto-migrates models from old path `TranslatedCaption/MoonshineModels/` to new `SubFlow/MoonshineModels/`
 
 ## File Structure
 
