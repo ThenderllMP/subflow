@@ -1,6 +1,6 @@
 ## Context
 
-SubFlow already has a live subtitle pipeline, a floating subtitle window, model loading, and a settings surface for display and translation choices. See `proposal.md - Why` for the user need; the main constraint here is to add recording and file output without disturbing the existing streaming subtitle behavior.
+CapiX already has a live subtitle pipeline, a floating subtitle window, model loading, and a settings surface for display and translation choices. See `proposal.md - Why` for the user need; the main constraint here is to add recording and file output without disturbing the existing streaming subtitle behavior.
 
 ## Goals / Non-Goals
 
@@ -46,4 +46,3 @@ SubFlow already has a live subtitle pipeline, a floating subtitle window, model 
 1. Add the new recording controls and settings with safe defaults so existing users keep the current subtitle experience.
 2. Default new sessions into a user-managed recording root that can be created automatically if missing.
 3. Keep all new artifacts self-contained in per-session folders so rollback only requires hiding the new UI and leaving old sessions untouched.
-

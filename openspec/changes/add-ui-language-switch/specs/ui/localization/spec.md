@@ -1,6 +1,6 @@
 ## Purpose
 
-SubFlow needs a built-in way to present the interface in either Chinese or English at runtime so users can work in their preferred language without changing macOS language settings or rebuilding the app.
+CapiX needs a built-in way to present the interface in either Chinese or English at runtime so users can work in their preferred language without changing macOS language settings or rebuilding the app.
 
 ## ADDED Requirements
 

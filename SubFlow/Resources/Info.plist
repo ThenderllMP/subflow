@@ -16,6 +16,6 @@
     <key>LSUIElement</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>SubFlow needs screen recording permission to capture system audio for real-time transcription.</string>
+    <string>CapiX needs screen recording permission to capture system audio for real-time transcription.</string>
 </dict>
 </plist>

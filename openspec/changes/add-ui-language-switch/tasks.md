@@ -10,4 +10,4 @@
 
 ## 3. Validation
 
-- [x] 3.1 Update tests for the new language preference and run `xcodebuild test -project SubFlow.xcodeproj -scheme SubFlowTests -destination 'platform=macOS'` successfully
+- [x] 3.1 Update tests for the new language preference and run `xcodebuild test -project CapiX.xcodeproj -scheme CapiXTests -destination 'platform=macOS'` successfully

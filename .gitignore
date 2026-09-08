@@ -3,6 +3,7 @@
 
 # Xcode
 SubFlow.xcodeproj/
+CapiX.xcodeproj/
 *.xcuserdata
 DerivedData/
 

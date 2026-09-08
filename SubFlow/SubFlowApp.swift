@@ -2,7 +2,7 @@ import SwiftUI
 import Translation
 
 @main
-struct SubFlowApp: App {
+struct CapiXApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "captions.bubble", accessibilityDescription: "SubFlow")
+            button.image = NSImage(systemSymbolName: "captions.bubble", accessibilityDescription: "CapiX")
             button.action = #selector(togglePopover)
             button.target = self
         }
@@ -98,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         } else if let button = statusItem.button {
             button.image = NSImage(
                 systemSymbolName: viewModel.isRecording ? "captions.bubble.fill" : "captions.bubble",
-                accessibilityDescription: "SubFlow"
+                accessibilityDescription: "CapiX"
             )
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         }

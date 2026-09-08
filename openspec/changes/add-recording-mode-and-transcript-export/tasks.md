@@ -16,5 +16,5 @@
 
 ## 4. Validation
 
-- [x] 4.1 Add or update tests for recording preference persistence, session folder creation, transcript export toggling, and capture-mode gating, and verify `xcodebuild test -project SubFlow.xcodeproj -scheme SubFlowTests -destination 'platform=macOS'` passes.
-- [x] 4.2 Run a clean app build and verify `xcodebuild build -project SubFlow.xcodeproj -scheme SubFlow -destination 'platform=macOS' -configuration Debug` succeeds.
+- [x] 4.1 Add or update tests for recording preference persistence, session folder creation, transcript export toggling, and capture-mode gating, and verify `xcodebuild test -project CapiX.xcodeproj -scheme CapiXTests -destination 'platform=macOS'` passes.
+- [x] 4.2 Run a clean app build and verify `xcodebuild build -project CapiX.xcodeproj -scheme CapiX -destination 'platform=macOS' -configuration Debug` succeeds.

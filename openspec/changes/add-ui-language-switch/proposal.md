@@ -1,6 +1,6 @@
 ## Why
 
-SubFlow currently ships with a mostly single-language interface, which makes the app less comfortable for users who prefer English or Chinese. Adding an in-app UI language switch lets the app match the user's working language without changing the system language or restarting into a different build.
+CapiX currently ships with a mostly single-language interface, which makes the app less comfortable for users who prefer English or Chinese. Adding an in-app UI language switch lets the app match the user's working language without changing the system language or restarting into a different build.
 
 ## What Changes
 

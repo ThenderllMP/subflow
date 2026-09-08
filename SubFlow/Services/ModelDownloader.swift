@@ -4,7 +4,7 @@ import Foundation
 ///
 /// All eight required artifacts live under `<baseURL>/<filename>` on
 /// `download.moonshine.ai` — Moonshine's own public CDN. Because the CDN is
-/// upstream-controlled, there is no self-hosted asset SubFlow has to keep in
+/// upstream-controlled, there is no self-hosted asset CapiX has to keep in
 /// sync with model version bumps, and no integrity hash to maintain on our
 /// side (the HTTPS channel is the trust boundary).
 struct ModelSource: Sendable {
@@ -37,7 +37,7 @@ enum ModelDownloadError: LocalizedError {
 /// Downloads Moonshine ORT model files on demand.
 ///
 /// Layout on disk:
-///   ~/Library/Application Support/SubFlow/MoonshineModels/<modelId>/
+///   ~/Library/Application Support/CapiX/MoonshineModels/<modelId>/
 ///     ├── adapter.ort
 ///     ├── cross_kv.ort
 ///     ├── decoder_kv.ort
@@ -64,7 +64,7 @@ enum ModelDownloader {
     static var modelsDirectory: URL {
         FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-            .appendingPathComponent("SubFlow/MoonshineModels", isDirectory: true)
+            .appendingPathComponent("CapiX/MoonshineModels", isDirectory: true)
     }
 
     /// Returns `true` if every required file for `modelId` exists and is non-empty.
@@ -189,19 +189,29 @@ enum ModelDownloader {
     static func migrateLegacyModelsIfNeeded() {
         let appSupport = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let newDir = appSupport.appendingPathComponent("SubFlow/MoonshineModels")
+        let newDir = appSupport.appendingPathComponent("CapiX/MoonshineModels")
         let oldDir = appSupport.appendingPathComponent("TranslatedCaption/MoonshineModels")
+        let legacySubFlowDir = appSupport.appendingPathComponent("SubFlow/MoonshineModels")
+
+        let sourceDir: URL?
+        if FileManager.default.fileExists(atPath: oldDir.path) {
+            sourceDir = oldDir
+        } else if FileManager.default.fileExists(atPath: legacySubFlowDir.path) {
+            sourceDir = legacySubFlowDir
+        } else {
+            sourceDir = nil
+        }
 
         guard !FileManager.default.fileExists(atPath: newDir.path),
-              FileManager.default.fileExists(atPath: oldDir.path) else { return }
+              let sourceDir else { return }
 
         do {
             try FileManager.default.createDirectory(
                 at: newDir.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            try FileManager.default.moveItem(at: oldDir, to: newDir)
-            AppLogger.log("Migrated models from TranslatedCaption to SubFlow")
+            try FileManager.default.moveItem(at: sourceDir, to: newDir)
+            AppLogger.log("Migrated models to CapiX")
         } catch {
             AppLogger.log("Model migration failed: \(error.localizedDescription)")
         }
@@ -377,7 +387,7 @@ extension ModelSource {
     /// `https://download.moonshine.ai/model/<modelId>/quantized/<file>` — the
     /// same CDN their `pip install moonshine-voice && python -m
     /// moonshine_voice.download --language en` tooling hits under the hood.
-    /// Pointing SubFlow at that CDN directly avoids mirroring model weights on
+    /// Pointing CapiX at that CDN directly avoids mirroring model weights on
     /// our own GitHub and keeps us on whichever version upstream ships.
     static func source(for modelId: String) -> ModelSource? {
         let base = "https://download.moonshine.ai/model"

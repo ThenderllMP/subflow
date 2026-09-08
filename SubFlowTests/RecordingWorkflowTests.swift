@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import SubFlow
+@testable import CapiX
 
 @Test @MainActor func recordingSettingsPersistAcrossRelaunch() {
     let defaults = UserDefaults.standard
@@ -9,23 +9,23 @@ import Testing
     defaults.removeObject(forKey: "transcriptExportEnabled")
 
     let settings = CaptionSettings()
-    settings.recordingOutputRootPath = "/tmp/subflow-recordings"
+    settings.recordingOutputRootPath = "/tmp/capix-recordings"
     settings.recordingMode = .audioOnly
     settings.transcriptExportEnabled = true
 
-    #expect(defaults.string(forKey: "recordingOutputRootPath") == "/tmp/subflow-recordings")
+    #expect(defaults.string(forKey: "recordingOutputRootPath") == "/tmp/capix-recordings")
     #expect(defaults.string(forKey: "recordingMode") == RecordingMode.audioOnly.rawValue)
     #expect(defaults.bool(forKey: "transcriptExportEnabled") == true)
 
     let reloaded = CaptionSettings()
-    #expect(reloaded.recordingOutputRootPath == "/tmp/subflow-recordings")
+    #expect(reloaded.recordingOutputRootPath == "/tmp/capix-recordings")
     #expect(reloaded.recordingMode == .audioOnly)
     #expect(reloaded.transcriptExportEnabled == true)
 }
 
 @Test func recordingWorkspaceCreatesPerSessionFolders() throws {
     let root = FileManager.default.temporaryDirectory
-        .appendingPathComponent("subflow-workspace-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("capix-workspace-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let screenSession = try RecordingWorkspace.prepareSession(
@@ -50,7 +50,7 @@ import Testing
 
 @Test func recordingWorkspaceRejectsNonDirectoryRoots() throws {
     let rootFile = FileManager.default.temporaryDirectory
-        .appendingPathComponent("subflow-root-\(UUID().uuidString).txt")
+        .appendingPathComponent("capix-root-\(UUID().uuidString).txt")
     try "not a folder".write(to: rootFile, atomically: true, encoding: .utf8)
     defer { try? FileManager.default.removeItem(at: rootFile) }
 
@@ -67,7 +67,7 @@ import Testing
 
 @Test func transcriptDocumentWriterWritesBilingualEntries() throws {
     let root = FileManager.default.temporaryDirectory
-        .appendingPathComponent("subflow-transcript-\(UUID().uuidString)", isDirectory: true)
+        .appendingPathComponent("capix-transcript-\(UUID().uuidString)", isDirectory: true)
     defer { try? FileManager.default.removeItem(at: root) }
 
     let session = try RecordingWorkspace.prepareSession(rootPath: root.path, mode: .audioOnly)
@@ -95,7 +95,7 @@ import Testing
     formatter.timeZone = .current
     formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
 
-    #expect(contents.contains("SubFlow Meeting Transcript"))
+    #expect(contents.contains("CapiX Meeting Transcript"))
     #expect(contents.contains("Mode: Audio Only"))
     #expect(contents.contains(formatter.string(from: startedAt)))
     #expect(contents.contains(formatter.string(from: entryTime)))

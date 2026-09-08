@@ -1,6 +1,6 @@
 ## Why
 
-SubFlow already produces live bilingual subtitles, but it does not yet preserve a recording session as a structured artifact. This change adds a recording entry point so users can capture a session, keep the generated subtitles together with the recording outputs, and optionally save the bilingual captions as a meeting transcript document.
+CapiX already produces live bilingual subtitles, but it does not yet preserve a recording session as a structured artifact. This change adds a recording entry point so users can capture a session, keep the generated subtitles together with the recording outputs, and optionally save the bilingual captions as a meeting transcript document.
 
 ## What Changes
 

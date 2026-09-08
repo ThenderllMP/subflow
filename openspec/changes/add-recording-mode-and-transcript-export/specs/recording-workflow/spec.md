@@ -1,6 +1,6 @@
 ## Purpose
 
-This capability lets users capture a recording session together with SubFlow's bilingual subtitles and keep the session artifacts organized under a user-configurable folder. It preserves the session as a reviewable meeting record after recording ends.
+This capability lets users capture a recording session together with CapiX's bilingual subtitles and keep the session artifacts organized under a user-configurable folder. It preserves the session as a reviewable meeting record after recording ends.
 
 ## ADDED Requirements
 
