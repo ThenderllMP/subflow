@@ -36,8 +36,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateFloatingPanelWithTranslation()
         observePanelWidth()
         observeTranslationTarget()
+        observeRecordingPreferences()
+        observeUILanguage()
         observeDownloadProgress()
 
+        viewModel.preferredUILanguage = settings.uiLanguage
+        viewModel.preferredRecordingMode = settings.recordingMode
+        viewModel.preferredRecordingRootPath = settings.recordingOutputRootPath
+        viewModel.transcriptExportEnabled = settings.transcriptExportEnabled
         viewModel.preloadModel(modelId: settings.selectedModelId)
     }
 
@@ -55,7 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if FileManager.default.fileExists(atPath: togglePath) {
                     try? FileManager.default.removeItem(atPath: togglePath)
                     AppLogger.log("Received file toggle trigger")
-                    await MainActor.run { vm.toggleCapture() }
+                    await MainActor.run { vm.toggleCapture(mode: self.settings.recordingMode) }
                 }
             }
         }
@@ -71,7 +77,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let menuBarView = MenuBarView(
-            onToggleCapture: { [weak self] in self?.viewModel.toggleCapture() },
             onOpenTranscript: { [weak self] in self?.openTranscriptWindow() },
             onOpenSettings: { [weak self] in self?.openSettingsWindow() },
             onQuit: { [weak self] in
@@ -80,6 +85,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
         .environment(viewModel)
+        .environment(settings)
 
         popover.contentSize = NSSize(width: 240, height: 200)
         popover.behavior = .transient
@@ -157,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 backing: .buffered,
                 defer: false
             )
-            window.title = "SubFlow — First-time Setup"
+            window.title = AppText.firstTimeSetupTitle(settings.uiLanguage)
             window.isReleasedWhenClosed = false
             window.level = .floating
             window.contentView = NSHostingView(
@@ -173,6 +179,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.close()
             downloadProgressWindow = nil
         }
+    }
+
+    private func observeUILanguage() {
+        withObservationTracking {
+            _ = settings.uiLanguage
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.viewModel.preferredUILanguage = self.settings.uiLanguage
+                self.updateLocalizedWindowTitles()
+                self.observeUILanguage()
+            }
+        }
+    }
+
+    private func updateLocalizedWindowTitles() {
+        let language = settings.uiLanguage
+        settingsWindow?.title = AppText.settingsWindowTitle(language)
+        downloadProgressWindow?.title = AppText.firstTimeSetupTitle(language)
+        transcriptWindow?.title = AppText.transcriptWindowTitle(language)
     }
 
     private func observePanelWidth() {
@@ -217,7 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupHotkey() {
         let manager = HotkeyManager {
             Task { @MainActor in
-                self.viewModel.toggleCapture()
+                self.viewModel.toggleCapture(mode: self.settings.recordingMode)
             }
         }
         manager.register()
@@ -239,7 +265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Settings"
+        window.title = AppText.settingsWindowTitle(settings.uiLanguage)
         window.contentView = NSHostingView(
             rootView: SettingsView()
                 .environment(viewModel)
@@ -266,14 +292,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "SubFlow"
+        window.title = AppText.transcriptWindowTitle(settings.uiLanguage)
         window.contentView = NSHostingView(
             rootView: MainWindowView()
                 .environment(viewModel)
+                .environment(settings)
         )
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         transcriptWindow = window
+    }
+
+    private func observeRecordingPreferences() {
+        withObservationTracking {
+            _ = settings.recordingMode
+            _ = settings.recordingOutputRootPath
+            _ = settings.transcriptExportEnabled
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.viewModel.preferredRecordingMode = self.settings.recordingMode
+                self.viewModel.preferredRecordingRootPath = self.settings.recordingOutputRootPath
+                self.viewModel.transcriptExportEnabled = self.settings.transcriptExportEnabled
+                self.observeRecordingPreferences()
+            }
+        }
     }
 }

@@ -9,11 +9,17 @@ enum TranslationTarget: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var displayName: String {
+    func displayName(in language: AppLanguage) -> String {
         switch self {
-        case .simplifiedChinese: return "简体中文"
-        case .traditionalChineseTaiwan: return "繁體中文（台灣）"
+        case .simplifiedChinese:
+            return language == .chinese ? "简体中文" : "Simplified Chinese"
+        case .traditionalChineseTaiwan:
+            return language == .chinese ? "繁體中文（台灣）" : "Traditional Chinese (Taiwan)"
         }
+    }
+
+    var displayName: String {
+        displayName(in: .english)
     }
 }
 
@@ -42,11 +48,24 @@ struct ASRModel: Identifiable, Hashable {
     ]
 
     static let defaultModel = available[1]
+
+    func accuracyLabel(in language: AppLanguage) -> String {
+        switch accuracy {
+        case "Good":
+            return language == .chinese ? "良好" : "Good"
+        case "Great":
+            return language == .chinese ? "优秀" : "Great"
+        default:
+            return accuracy
+        }
+    }
 }
 
 @MainActor
 @Observable
 final class CaptionSettings {
+    static let defaultRecordingRootPath = RecordingWorkspace.defaultRootURL.path
+
     var panelWidth: CGFloat {
         didSet { UserDefaults.standard.set(Double(panelWidth), forKey: "panelWidth") }
     }
@@ -62,6 +81,30 @@ final class CaptionSettings {
     var translationTarget: TranslationTarget {
         didSet {
             UserDefaults.standard.set(translationTarget.rawValue, forKey: "translationTarget")
+        }
+    }
+
+    var recordingOutputRootPath: String {
+        didSet {
+            UserDefaults.standard.set(recordingOutputRootPath, forKey: "recordingOutputRootPath")
+        }
+    }
+
+    var recordingMode: RecordingMode {
+        didSet {
+            UserDefaults.standard.set(recordingMode.rawValue, forKey: "recordingMode")
+        }
+    }
+
+    var uiLanguage: AppLanguage {
+        didSet {
+            UserDefaults.standard.set(uiLanguage.rawValue, forKey: "uiLanguage")
+        }
+    }
+
+    var transcriptExportEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(transcriptExportEnabled, forKey: "transcriptExportEnabled")
         }
     }
 
@@ -88,5 +131,18 @@ final class CaptionSettings {
         let savedTarget = defaults.string(forKey: "translationTarget")
             .flatMap(TranslationTarget.init(rawValue:))
         translationTarget = savedTarget ?? .simplifiedChinese
+
+        let savedRootPath = defaults.string(forKey: "recordingOutputRootPath")
+        recordingOutputRootPath = savedRootPath ?? Self.defaultRecordingRootPath
+
+        let savedMode = defaults.string(forKey: "recordingMode")
+            .flatMap(RecordingMode.init(rawValue:))
+        recordingMode = savedMode ?? .screenAndAudio
+
+        let savedLanguage = defaults.string(forKey: "uiLanguage")
+            .flatMap(AppLanguage.init(rawValue:))
+        uiLanguage = savedLanguage ?? .english
+
+        transcriptExportEnabled = defaults.object(forKey: "transcriptExportEnabled") as? Bool ?? false
     }
 }

@@ -8,14 +8,14 @@ final class CaptionViewModel {
     var isRecording = false
     var isLoading = false
     var isModelReady = false
-    var statusMessage = ""
+    var preferredUILanguage: AppLanguage = .english
+    var preferredRecordingMode: RecordingMode = .screenAndAudio
+    var preferredRecordingRootPath: String = CaptionSettings.defaultRecordingRootPath
+    var transcriptExportEnabled = false
+    var currentRecordingMode: RecordingMode?
     /// In-flight model download progress in `[0, 1]`. `nil` when no download is
     /// running (either already on disk or not yet started).
     var downloadProgress: Double?
-    /// Last user-facing model-loading error. The download progress window keeps
-    /// itself on screen until this is cleared so the error is never silently
-    /// swallowed by window auto-dismiss.
-    var downloadError: String?
 
     /// Current streaming English (live preview while speaker talks)
     var streamingEnglish = ""
@@ -29,8 +29,14 @@ final class CaptionViewModel {
     let translationService = TranslationService()
 
     private let maxRecentCaptions = 2
+    private var statusState: AppMessage?
+    /// Last user-facing model-loading error. The download progress window keeps
+    /// itself on screen until this is cleared so the error is never silently
+    /// swallowed by window auto-dismiss.
+    private var downloadErrorState: AppMessage?
     private var audioCaptureService: AudioCaptureService?
     private var moonshineService: MoonshineTranscriptionService?
+    private var activeRecordingSession: ActiveRecordingSession?
     private var accumulatorTask: Task<Void, Never>?
     private var completionDisplayTask: Task<Void, Never>?
     private var cleanupTask: Task<Void, Never>?
@@ -38,15 +44,47 @@ final class CaptionViewModel {
     /// started while a translation was in-flight.
     private var streamingGeneration = 0
 
+    var statusMessage: String {
+        statusState?.text(language: preferredUILanguage) ?? ""
+    }
+
+    var downloadError: String? {
+        downloadErrorState?.text(language: preferredUILanguage)
+    }
+
+    private func setStatus(_ message: AppMessage?) {
+        statusState = message
+    }
+
+    private func setDownloadError(_ message: AppMessage?) {
+        downloadErrorState = message
+    }
+
     // MARK: - Lifecycle
+
+    private final class ActiveRecordingSession {
+        let mode: RecordingMode
+        let paths: RecordingSessionPaths
+        var transcriptWriter: TranscriptDocumentWriter?
+
+        init(
+            mode: RecordingMode,
+            paths: RecordingSessionPaths,
+            transcriptWriter: TranscriptDocumentWriter?
+        ) {
+            self.mode = mode
+            self.paths = paths
+            self.transcriptWriter = transcriptWriter
+        }
+    }
 
     func preloadModel(modelId: String = ASRModel.defaultModel.id) {
         guard !isModelReady, !isLoading else { return }
         let modelName = ASRModel.available.first { $0.id == modelId }?.name ?? "model"
         isLoading = true
-        statusMessage = "Loading \(modelName)..."
+        setStatus(.loadingModel(modelName))
         downloadProgress = nil
-        downloadError = nil
+        setDownloadError(nil)
 
         Task {
             do {
@@ -56,26 +94,25 @@ final class CaptionViewModel {
                     onDownloadProgress: { [weak self] p in
                         Task { @MainActor [weak self] in
                             self?.downloadProgress = p
-                            if let self, self.statusMessage.hasPrefix("Downloading") == false {
-                                self.statusMessage = "Downloading \(modelName)..."
+                            if let self, self.statusState == nil || self.statusState?.text(language: self.preferredUILanguage).hasPrefix(AppText.downloadingStatus(self.preferredUILanguage)) == false {
+                                self.setStatus(.downloadingModel(modelName))
                             }
                         }
                     }
                 )
                 self.moonshineService = service
                 self.isModelReady = true
-                self.statusMessage = ""
+                self.setStatus(nil)
                 self.downloadProgress = nil
-                self.downloadError = nil
+                self.setDownloadError(nil)
                 AppLogger.log("Model loaded successfully: \(modelId)")
             } catch {
                 AppLogger.log("Model load failed: \(Self.describe(error))")
-                let message = "Model load failed: \(error.localizedDescription)"
-                self.statusMessage = message
+                self.setStatus(.modelLoadFailed(error.localizedDescription))
                 // Set error BEFORE clearing progress so the progress window
                 // observer sees (downloadError != nil) and keeps the window up
                 // with an error state for the user to dismiss.
-                self.downloadError = message
+                self.setDownloadError(.modelLoadFailed(error.localizedDescription))
                 self.downloadProgress = nil
             }
             self.isLoading = false
@@ -101,7 +138,7 @@ final class CaptionViewModel {
     /// Dismiss the last `downloadError`, e.g. after the user clicks the
     /// "Dismiss" button in `ModelDownloadProgressView`.
     func clearDownloadError() {
-        downloadError = nil
+        setDownloadError(nil)
     }
 
     func switchModel(to modelId: String) {
@@ -116,9 +153,9 @@ final class CaptionViewModel {
         isModelReady = false
         isLoading = true
         let modelName = ASRModel.available.first { $0.id == modelId }?.name ?? "model"
-        statusMessage = "Loading \(modelName)..."
+        setStatus(.loadingModel(modelName))
         downloadProgress = nil
-        downloadError = nil
+        setDownloadError(nil)
 
         Task {
             do {
@@ -128,23 +165,22 @@ final class CaptionViewModel {
                     onDownloadProgress: { [weak self] p in
                         Task { @MainActor [weak self] in
                             self?.downloadProgress = p
-                            if let self, self.statusMessage.hasPrefix("Downloading") == false {
-                                self.statusMessage = "Downloading \(modelName)..."
+                            if let self, self.statusState == nil || self.statusState?.text(language: self.preferredUILanguage).hasPrefix(AppText.downloadingStatus(self.preferredUILanguage)) == false {
+                                self.setStatus(.downloadingModel(modelName))
                             }
                         }
                     }
                 )
                 self.moonshineService = service
                 self.isModelReady = true
-                self.statusMessage = ""
+                self.setStatus(nil)
                 self.downloadProgress = nil
-                self.downloadError = nil
+                self.setDownloadError(nil)
                 AppLogger.log("Model switched successfully: \(modelId)")
             } catch {
                 AppLogger.log("Model switch failed: \(error.localizedDescription)")
-                let message = "Failed: \(error.localizedDescription)"
-                self.statusMessage = message
-                self.downloadError = message
+                self.setStatus(.modelSwitchFailed(error.localizedDescription))
+                self.setDownloadError(.modelSwitchFailed(error.localizedDescription))
                 self.downloadProgress = nil
             }
             self.isLoading = false
@@ -156,8 +192,17 @@ final class CaptionViewModel {
     }
 
     func addCaption(english: String, chinese: String) {
+        appendCaption(english: english, chinese: chinese, timestamp: .now)
+    }
+
+    private func appendCaption(
+        english: String,
+        chinese: String,
+        timestamp: Date,
+        transcriptWriter: TranscriptDocumentWriter? = nil
+    ) {
         let entry = CaptionEntry(
-            timestamp: .now,
+            timestamp: timestamp,
             englishText: english,
             chineseText: chinese
         )
@@ -165,6 +210,14 @@ final class CaptionViewModel {
         recentCaptions.append(entry)
         while recentCaptions.count > maxRecentCaptions {
             recentCaptions.removeFirst()
+        }
+        let writer = transcriptWriter ?? activeRecordingSession?.transcriptWriter
+        if let writer {
+            do {
+                try writer.append(entry: entry)
+            } catch {
+                AppLogger.log("Transcript append failed: \(error.localizedDescription)")
+            }
         }
         scheduleCleanup()
     }
@@ -183,16 +236,16 @@ final class CaptionViewModel {
 
     // MARK: - Capture Control
 
-    func toggleCapture() {
+    func toggleCapture(mode: RecordingMode? = nil) {
         AppLogger.log("toggleCapture called, isRecording=\(isRecording), isModelReady=\(isModelReady)")
         if isRecording {
             stopCapture()
         } else {
-            Task { await startCapture() }
+            Task { await startCapture(mode: mode ?? preferredRecordingMode) }
         }
     }
 
-    func startCapture() async {
+    func startCapture(mode: RecordingMode = .screenAndAudio) async {
         guard !isRecording else { return }
 
         if !isModelReady {
@@ -202,30 +255,72 @@ final class CaptionViewModel {
         }
 
         guard moonshineService != nil else {
-            statusMessage = "Model not available"
+            setStatus(.modelNotAvailable)
             return
         }
 
         do {
-            let audioService = AudioCaptureService()
+            try RecordingPermissionManager.ensureScreenRecordingAccess()
+
+            let sessionPaths = try RecordingWorkspace.prepareSession(
+                rootPath: preferredRecordingRootPath,
+                mode: mode
+            )
+            let audioService = RecordingCaptureService(mode: mode, outputURL: sessionPaths.mediaURL)
             let audioStream = audioService.makeAudioStream()
 
+            let recordingTranscriptWriter: TranscriptDocumentWriter?
+            if transcriptExportEnabled {
+                recordingTranscriptWriter = try TranscriptDocumentWriter(
+                    sessionURL: sessionPaths.sessionURL,
+                    transcriptURL: sessionPaths.transcriptURL,
+                    mode: mode
+                )
+            } else {
+                recordingTranscriptWriter = nil
+            }
+
+            let session = ActiveRecordingSession(
+                mode: mode,
+                paths: sessionPaths,
+                transcriptWriter: recordingTranscriptWriter
+            )
+
+            self.activeRecordingSession = session
+            self.currentRecordingMode = mode
             self.audioCaptureService = audioService
             self.isRecording = true
-            self.statusMessage = ""
+            self.setStatus(nil)
+            self.preferredRecordingMode = mode
 
-            try await audioService.start()
-            AppLogger.log("Audio capture started")
             runPipeline(audioStream: audioStream)
+            try await audioService.start()
+            AppLogger.log("Recording capture started: \(mode.displayName)")
         } catch {
             AppLogger.log("Failed to start capture: \(error.localizedDescription)")
-            statusMessage = "Error: \(error.localizedDescription)"
+            setStatus(Self.captureFailureState(for: error))
+            accumulatorTask?.cancel()
+            accumulatorTask = nil
+            completionDisplayTask?.cancel()
+            completionDisplayTask = nil
+            try? moonshineService?.stopStream()
+            Task { await audioCaptureService?.stop() }
+            activeRecordingSession?.transcriptWriter?.finish()
+            activeRecordingSession = nil
+            audioCaptureService = nil
             isRecording = false
+            currentRecordingMode = nil
         }
     }
 
     func stopCapture() {
+        let finalTranscriptWriter = activeRecordingSession?.transcriptWriter
+        let remainingEnglish = streamingEnglish
+        let remainingChinese = streamingChinese
+
         isRecording = false
+        currentRecordingMode = nil
+        activeRecordingSession = nil
         accumulatorTask?.cancel()
         accumulatorTask = nil
         completionDisplayTask?.cancel()
@@ -234,25 +329,36 @@ final class CaptionViewModel {
         try? moonshineService?.stopStream()
 
         let service = audioCaptureService
-        Task { await service?.stop() }
         audioCaptureService = nil
+        Task { await service?.stop() }
 
-        // Save any remaining streaming text before clearing
-        let remainingEnglish = streamingEnglish
-        let remainingChinese = streamingChinese
-        if !remainingEnglish.isEmpty {
-            if !remainingChinese.isEmpty {
-                addCaption(english: remainingEnglish, chinese: remainingChinese)
-            } else {
-                Task {
-                    let chinese = (try? await translationService.translate(remainingEnglish)) ?? ""
-                    addCaption(english: remainingEnglish, chinese: chinese)
-                }
-            }
-        }
         streamingEnglish = ""
         streamingChinese = ""
         streamingWords = []
+
+        guard !remainingEnglish.isEmpty else {
+            finalTranscriptWriter?.finish()
+            return
+        }
+
+        Task {
+            let chinese: String
+            if !remainingChinese.isEmpty {
+                chinese = remainingChinese
+            } else {
+                chinese = (try? await translationService.translate(remainingEnglish)) ?? ""
+            }
+
+            await MainActor.run {
+                self.appendCaption(
+                    english: remainingEnglish,
+                    chinese: chinese,
+                    timestamp: .now,
+                    transcriptWriter: finalTranscriptWriter
+                )
+                finalTranscriptWriter?.finish()
+            }
+        }
     }
 
     // MARK: - Moonshine Streaming Pipeline
@@ -330,7 +436,7 @@ final class CaptionViewModel {
             try moonshine.startStream(updateInterval: 0.5)
         } catch {
             AppLogger.log("Failed to start Moonshine stream: \(error.localizedDescription)")
-            statusMessage = "Stream error: \(error.localizedDescription)"
+            setStatus(.streamError(error.localizedDescription))
             return
         }
 
@@ -370,6 +476,43 @@ final class CaptionViewModel {
                 }
             }
         }
+    }
+
+    private nonisolated static func captureFailureState(for error: Error) -> AppMessage {
+        let nsError = error as NSError
+        let description = nsError.localizedDescription
+
+        if error is RecordingPermissionError || description.localizedCaseInsensitiveContains("TCC") {
+            return .screenRecordingDenied
+        }
+
+        if let workspaceError = error as? RecordingWorkspaceError {
+            switch workspaceError {
+            case let .rootUnavailable(url):
+                return .recordingFolderUnavailable(url.path)
+            case let .rootNotWritable(url):
+                return .recordingFolderNotWritable(url.path)
+            case let .sessionCreationFailed(url):
+                return .sessionCreationFailed(url.path)
+            case let .transcriptCreationFailed(url):
+                return .transcriptCreationFailed(url.path)
+            }
+        }
+
+        if let captureError = error as? RecordingCaptureError {
+            switch captureError {
+            case .noDisplayFound:
+                return .noDisplayFound
+            case .recordingOutputFailed:
+                return .recordingOutputFailed
+            case .audioFormatUnavailable:
+                return .audioFormatUnavailable
+            case let .audioFileFailed(url):
+                return .audioFileFailed(url.path)
+            }
+        }
+
+        return .captureError(description)
     }
 
     /// Estimate comfortable reading time for bilingual subtitles.

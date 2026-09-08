@@ -28,16 +28,17 @@ struct ModelDownloadProgressView: View {
     }
 
     private var progressContent: some View {
-        VStack(spacing: 16) {
+        let language = settings.uiLanguage
+        return VStack(spacing: 16) {
             Image(systemName: "arrow.down.circle")
                 .font(.system(size: 36))
                 .foregroundStyle(.tint)
                 .symbolEffect(.pulse, options: .repeating)
 
             VStack(spacing: 4) {
-                Text("Downloading \(modelName)")
+                Text(AppText.downloadingModel(modelName, language: settings.uiLanguage))
                     .font(.headline)
-                Text("First launch only. The model will be cached for next time.")
+                Text(AppText.firstLaunchOnly(language))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -58,13 +59,14 @@ struct ModelDownloadProgressView: View {
     }
 
     private func errorContent(error: String) -> some View {
-        VStack(spacing: 16) {
+        let language = settings.uiLanguage
+        return VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 36))
                 .foregroundStyle(.orange)
 
             VStack(spacing: 4) {
-                Text("Model download failed")
+                Text(AppText.modelDownloadFailed(language))
                     .font(.headline)
                 Text(error)
                     .font(.caption)
@@ -74,10 +76,10 @@ struct ModelDownloadProgressView: View {
             }
 
             HStack {
-                Button("Dismiss", action: viewModel.clearDownloadError)
+                Button(AppText.dismiss(language), action: viewModel.clearDownloadError)
                     .keyboardShortcut(.cancelAction)
                 Spacer()
-                Button("Retry") {
+                Button(AppText.retry(language)) {
                     viewModel.clearDownloadError()
                     viewModel.preloadModel(modelId: settings.selectedModelId)
                 }
@@ -93,7 +95,7 @@ struct ModelDownloadProgressView: View {
 
     private var statusLabel: String {
         if let p = viewModel.downloadProgress, p >= 1.0 {
-            return "Extracting…"
+            return AppText.extracting(settings.uiLanguage)
         }
         return viewModel.statusMessage
     }

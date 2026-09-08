@@ -26,7 +26,7 @@ enum ModelDownloadError: LocalizedError {
             return "Download of \(file) failed (HTTP \(code)). " +
                    "Check your internet connection and that download.moonshine.ai is reachable."
         case .missingContentLength(let file):
-            return "Server did not return Content-Length for \(file). " +
+            return "Server did not provide a usable size for \(file). " +
                    "The upstream CDN (download.moonshine.ai) behaviour may have changed."
         case .invalidArchive(let msg):
             return "Model files downloaded but validation failed: \(msg)"
@@ -207,30 +207,58 @@ enum ModelDownloader {
         }
     }
 
-    private static func discoverSizes(
+    static func discoverSizes(
         source: ModelSource, config: URLSessionConfiguration
     ) async throws -> [Int64] {
+        var sizes: [Int64] = []
+        for file in requiredFiles {
+            sizes.append(try await discoverSize(for: file, source: source, config: config))
+        }
+        return sizes
+    }
+
+    private static func discoverSize(
+        for file: String,
+        source: ModelSource,
+        config: URLSessionConfiguration
+    ) async throws -> Int64 {
         let session = URLSession(configuration: config)
         defer { session.finishTasksAndInvalidate() }
 
-        var sizes: [Int64] = []
-        for file in requiredFiles {
-            var request = URLRequest(url: source.baseURL.appendingPathComponent(file))
-            request.httpMethod = "HEAD"
-            let (_, response) = try await session.data(for: request)
+        let url = source.baseURL.appendingPathComponent(file)
 
-            guard let http = response as? HTTPURLResponse else {
-                throw ModelDownloadError.httpError(file, -1)
-            }
-            guard (200..<300).contains(http.statusCode) else {
-                throw ModelDownloadError.httpError(file, http.statusCode)
-            }
-            guard response.expectedContentLength > 0 else {
-                throw ModelDownloadError.missingContentLength(file)
-            }
-            sizes.append(response.expectedContentLength)
+        var headRequest = URLRequest(url: url)
+        headRequest.httpMethod = "HEAD"
+        let (_, headResponse) = try await session.data(for: headRequest)
+
+        guard let http = headResponse as? HTTPURLResponse else {
+            throw ModelDownloadError.httpError(file, -1)
         }
-        return sizes
+        guard (200..<300).contains(http.statusCode) else {
+            throw ModelDownloadError.httpError(file, http.statusCode)
+        }
+        if headResponse.expectedContentLength > 0 {
+            return headResponse.expectedContentLength
+        }
+
+        // Some CDN responses do not publish Content-Length on HEAD. Fall back
+        // to a GET so we can still measure the file and keep the download flow
+        // moving.
+        AppLogger.log("HEAD omitted Content-Length for \(file); falling back to GET size")
+        let (data, getResponse) = try await session.data(from: url)
+
+        guard let getHTTP = getResponse as? HTTPURLResponse else {
+            throw ModelDownloadError.httpError(file, -1)
+        }
+        guard (200..<300).contains(getHTTP.statusCode) else {
+            throw ModelDownloadError.httpError(file, getHTTP.statusCode)
+        }
+        guard !data.isEmpty else {
+            throw ModelDownloadError.invalidArchive(
+                "Could not determine size for \(file); response body was empty"
+            )
+        }
+        return Int64(data.count)
     }
 
     /// Maximum number of attempts per file before giving up. Each attempt starts

@@ -2,6 +2,22 @@ import Testing
 import Foundation
 @testable import SubFlow
 
+private func resetCaptionSettingsDefaults() {
+    let defaults = UserDefaults.standard
+    for key in [
+        "panelWidth",
+        "fontSize",
+        "selectedModelId",
+        "translationTarget",
+        "recordingOutputRootPath",
+        "recordingMode",
+        "transcriptExportEnabled",
+        "uiLanguage",
+    ] {
+        defaults.removeObject(forKey: key)
+    }
+}
+
 // MARK: - ASRModel
 
 @Test func asrModelAvailableIsNotEmpty() {
@@ -26,21 +42,17 @@ import Foundation
 // MARK: - CaptionSettings
 
 @Test @MainActor func captionSettingsDefaultValues() {
-    // Clear stored values to test defaults
-    let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "panelWidth")
-    defaults.removeObject(forKey: "fontSize")
-    defaults.removeObject(forKey: "selectedModelId")
+    resetCaptionSettingsDefaults()
 
     let settings = CaptionSettings()
     #expect(settings.panelWidth == 620)
     #expect(settings.fontSize == 15)
     #expect(settings.selectedModelId == ASRModel.defaultModel.id)
+    #expect(settings.uiLanguage == .english)
 }
 
 @Test @MainActor func captionSettingsSelectedModelProperty() {
-    let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "selectedModelId")
+    resetCaptionSettingsDefaults()
 
     let settings = CaptionSettings()
     #expect(settings.selectedModel.id == ASRModel.defaultModel.id)
@@ -48,8 +60,8 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsPersistsPanelWidth() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "panelWidth")
 
     let settings = CaptionSettings()
     settings.panelWidth = 800
@@ -57,8 +69,8 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsPersistsFontSize() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "fontSize")
 
     let settings = CaptionSettings()
     settings.fontSize = 20
@@ -66,8 +78,8 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsPersistsModelId() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "selectedModelId")
 
     let settings = CaptionSettings()
     settings.selectedModelId = "small-streaming-en"
@@ -75,6 +87,7 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsInvalidModelIdFallsBackToDefault() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
     defaults.set("nonexistent-model", forKey: "selectedModelId")
 
@@ -84,8 +97,7 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsSelectedModelFallbackForInvalidId() {
-    let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "selectedModelId")
+    resetCaptionSettingsDefaults()
 
     let settings = CaptionSettings()
     // Manually set an invalid id after init
@@ -95,6 +107,7 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsLoadsPersistedPanelWidth() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
     defaults.set(750.0, forKey: "panelWidth")
 
@@ -106,6 +119,7 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsLoadsPersistedFontSize() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
     defaults.set(18.0, forKey: "fontSize")
 
@@ -137,17 +151,32 @@ import Foundation
     #expect(Set(names).count == names.count)
 }
 
+@Test func translationTargetDisplayNamesAreLocalized() {
+    #expect(TranslationTarget.simplifiedChinese.displayName(in: .english) == "Simplified Chinese")
+    #expect(TranslationTarget.traditionalChineseTaiwan.displayName(in: .chinese) == "繁體中文（台灣）")
+}
+
+@Test func appLanguageDisplayNamesAreLocalized() {
+    #expect(AppLanguage.english.displayName(in: .chinese) == "英文")
+    #expect(AppLanguage.chinese.displayName(in: .english) == "Chinese")
+}
+
+@Test func recordingModeDisplayNamesAreLocalized() {
+    #expect(RecordingMode.screenAndAudio.displayName(in: .chinese) == "屏幕 + 音频")
+    #expect(RecordingMode.audioOnly.shortLabel(in: .english) == "Audio")
+}
+
 @Test @MainActor func captionSettingsDefaultTranslationTargetIsSimplified() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "translationTarget")
 
     let settings = CaptionSettings()
     #expect(settings.translationTarget == .simplifiedChinese)
 }
 
 @Test @MainActor func captionSettingsPersistsTranslationTarget() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
-    defaults.removeObject(forKey: "translationTarget")
 
     let settings = CaptionSettings()
     settings.translationTarget = .traditionalChineseTaiwan
@@ -157,7 +186,17 @@ import Foundation
     defaults.removeObject(forKey: "translationTarget")
 }
 
+@Test @MainActor func captionSettingsPersistsUiLanguage() {
+    resetCaptionSettingsDefaults()
+    let defaults = UserDefaults.standard
+
+    let settings = CaptionSettings()
+    settings.uiLanguage = .chinese
+    #expect(defaults.string(forKey: "uiLanguage") == AppLanguage.chinese.rawValue)
+}
+
 @Test @MainActor func captionSettingsLoadsPersistedTranslationTarget() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
     defaults.set("zh-Hant-TW", forKey: "translationTarget")
 
@@ -169,6 +208,7 @@ import Foundation
 }
 
 @Test @MainActor func captionSettingsInvalidTranslationTargetFallsBackToDefault() {
+    resetCaptionSettingsDefaults()
     let defaults = UserDefaults.standard
     defaults.set("ja-JP", forKey: "translationTarget")
 

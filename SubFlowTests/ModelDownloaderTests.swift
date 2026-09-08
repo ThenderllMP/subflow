@@ -91,6 +91,47 @@ struct ModelDownloaderTests {
         #expect(medium.baseURL.path.contains("medium-streaming-en"))
     }
 
+    @Test("falls back to GET when HEAD omits Content-Length")
+    func discoverSizesFallsBackToGet() async throws {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [MockMoonshineURLProtocol.self]
+
+        MockMoonshineURLProtocol.handler = { request in
+            let file = request.url!.lastPathComponent
+            let method = request.httpMethod ?? "GET"
+
+            if file == "streaming_config.json" && method == "HEAD" {
+                return MockMoonshineURLProtocol.Response(
+                    statusCode: 200,
+                    headers: [:],
+                    body: Data()
+                )
+            }
+
+            if file == "streaming_config.json" && method == "GET" {
+                return MockMoonshineURLProtocol.Response(
+                    statusCode: 200,
+                    headers: [:],
+                    body: Data(#"{"streaming":true}"#.utf8)
+                )
+            }
+
+            return MockMoonshineURLProtocol.Response(
+                statusCode: 200,
+                headers: ["Content-Length": "100"],
+                body: Data()
+            )
+        }
+        defer { MockMoonshineURLProtocol.handler = nil }
+
+        let source = ModelSource(baseURL: URL(string: "https://download.moonshine.ai/model/small-streaming-en/quantized")!)
+        let sizes = try await ModelDownloader.discoverSizes(source: source, config: config)
+        let configIndex = ModelDownloader.requiredFiles.firstIndex(of: "streaming_config.json")!
+
+        #expect(sizes.count == ModelDownloader.requiredFiles.count)
+        #expect(sizes[configIndex] == Int64(#"{"streaming":true}"#.utf8.count))
+    }
+
     // MARK: - ensureModel fast path
 
     @Test("ensureModel throws noSource for unknown IDs")
@@ -108,4 +149,44 @@ struct ModelDownloaderTests {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }
+}
+
+private final class MockMoonshineURLProtocol: URLProtocol {
+    struct Response {
+        let statusCode: Int
+        let headers: [String: String]
+        let body: Data
+    }
+
+    nonisolated(unsafe) static var handler: ((URLRequest) -> Response)?
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        request.url?.host == "download.moonshine.ai"
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let handler = Self.handler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        let responseSpec = handler(request)
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: responseSpec.statusCode,
+            httpVersion: "HTTP/1.1",
+            headerFields: responseSpec.headers
+        )!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        if !responseSpec.body.isEmpty {
+            client?.urlProtocol(self, didLoad: responseSpec.body)
+        }
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {}
 }

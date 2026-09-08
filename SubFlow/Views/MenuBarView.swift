@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     @Environment(CaptionViewModel.self) private var viewModel
-    var onToggleCapture: () -> Void
+    @Environment(CaptionSettings.self) private var settings
     var onOpenTranscript: () -> Void
     var onOpenSettings: () -> Void
     var onQuit: () -> Void
@@ -21,24 +21,41 @@ struct MenuBarView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Button(action: onToggleCapture) {
-                Text(buttonLabel)
-                    .frame(maxWidth: .infinity)
+            if viewModel.isRecording {
+                Button(action: { viewModel.stopCapture() }) {
+                    Label(AppText.stopRecording(settings.uiLanguage), systemImage: "stop.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .controlSize(.large)
+                .disabled(viewModel.isLoading && !viewModel.isModelReady)
+            } else {
+                Menu {
+                    Button(action: { startRecording(mode: .screenAndAudio) }) {
+                        Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
+                    }
+
+                    Button(action: { startRecording(mode: .audioOnly) }) {
+                        Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
+                    }
+                } label: {
+                    Label(AppText.record(settings.uiLanguage), systemImage: "record.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .controlSize(.large)
+                .disabled(viewModel.isLoading && !viewModel.isModelReady)
             }
-            .controlSize(.large)
-            .disabled(viewModel.isLoading && !viewModel.isModelReady)
 
             Divider()
 
-            Button("Open Transcript", action: onOpenTranscript)
+            Button(AppText.openTranscript(settings.uiLanguage), action: onOpenTranscript)
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Settings...", action: onOpenSettings)
+            Button(AppText.settings(settings.uiLanguage) + "...", action: onOpenSettings)
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Button("Quit", action: onQuit)
+            Button(AppText.quit(settings.uiLanguage), action: onQuit)
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .foregroundStyle(.secondary)
@@ -47,16 +64,21 @@ struct MenuBarView: View {
         .frame(width: 220)
     }
 
-    private var statusLabel: String {
-        if viewModel.isLoading { return viewModel.statusMessage.isEmpty ? "Loading model..." : viewModel.statusMessage }
-        if viewModel.isRecording { return "Recording" }
-        if viewModel.isModelReady { return "Ready" }
-        return "Idle"
+    private func startRecording(mode: RecordingMode) {
+        settings.recordingMode = mode
+        Task { await viewModel.startCapture(mode: mode) }
     }
 
-    private var buttonLabel: String {
-        if viewModel.isRecording { return "Stop" }
-        if viewModel.isLoading { return "Loading..." }
-        return "Start"
+    private var statusLabel: String {
+        if !viewModel.statusMessage.isEmpty { return viewModel.statusMessage }
+        if viewModel.isLoading { return viewModel.statusMessage.isEmpty ? AppText.loading(settings.uiLanguage) : viewModel.statusMessage }
+        if viewModel.isRecording {
+            if let mode = viewModel.currentRecordingMode {
+                return AppText.recordingStatus(mode: mode, language: settings.uiLanguage)
+            }
+            return AppText.recording(settings.uiLanguage)
+        }
+        if viewModel.isModelReady { return AppText.ready(settings.uiLanguage) }
+        return AppText.idle(settings.uiLanguage)
     }
 }

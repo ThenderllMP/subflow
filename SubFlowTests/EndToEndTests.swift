@@ -85,6 +85,10 @@ import AppKit
     defaults.removeObject(forKey: "panelWidth")
     defaults.removeObject(forKey: "fontSize")
     defaults.removeObject(forKey: "selectedModelId")
+    defaults.removeObject(forKey: "recordingOutputRootPath")
+    defaults.removeObject(forKey: "recordingMode")
+    defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "uiLanguage")
 
     let settings1 = CaptionSettings()
     settings1.panelWidth = 800
@@ -98,10 +102,17 @@ import AppKit
     defaults.removeObject(forKey: "panelWidth")
     defaults.removeObject(forKey: "fontSize")
     defaults.removeObject(forKey: "selectedModelId")
+    defaults.removeObject(forKey: "recordingOutputRootPath")
+    defaults.removeObject(forKey: "recordingMode")
+    defaults.removeObject(forKey: "transcriptExportEnabled")
 }
 
 @Test @MainActor func settingsInvalidModelIdFallbackEndToEnd() {
     let defaults = UserDefaults.standard
+    defaults.removeObject(forKey: "recordingOutputRootPath")
+    defaults.removeObject(forKey: "recordingMode")
+    defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "uiLanguage")
     defaults.set("nonexistent-model-id", forKey: "selectedModelId")
     let settings = CaptionSettings()
     #expect(settings.selectedModelId == ASRModel.defaultModel.id)

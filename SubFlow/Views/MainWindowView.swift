@@ -2,9 +2,9 @@ import SwiftUI
 
 struct MainWindowView: View {
     @Environment(CaptionViewModel.self) private var viewModel
+    @Environment(CaptionSettings.self) private var settings
 
     var body: some View {
-        @Bindable var vm = viewModel
         VStack(spacing: 0) {
             toolbar
             Divider()
@@ -16,30 +16,48 @@ struct MainWindowView: View {
 
     private var toolbar: some View {
         HStack {
-            Button(action: { viewModel.toggleCapture() }) {
-                HStack(spacing: 6) {
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Circle()
-                            .fill(viewModel.isRecording ? .green : .gray)
-                            .frame(width: 8, height: 8)
-                    }
-                    Text(toolbarButtonLabel)
+            if viewModel.isRecording {
+                Button(action: { viewModel.stopCapture() }) {
+                    Label(AppText.stopRecording(settings.uiLanguage), systemImage: "stop.circle.fill")
                         .font(.system(size: 13, weight: .semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.red.opacity(0.16))
+                        )
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(viewModel.isRecording
-                              ? Color.green.opacity(0.15)
-                              : Color.gray.opacity(0.15))
-                )
+                .buttonStyle(.plain)
+            } else {
+                Menu {
+                    Button(action: { startRecording(mode: .screenAndAudio) }) {
+                        Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
+                    }
+
+                    Button(action: { startRecording(mode: .audioOnly) }) {
+                        Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "record.circle")
+                        }
+                        Text(toolbarButtonLabel)
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.gray.opacity(0.15))
+                    )
+                }
+                .menuStyle(.borderlessButton)
+                .disabled(viewModel.isLoading)
             }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isLoading)
 
             if !viewModel.statusMessage.isEmpty {
                 Text(viewModel.statusMessage)
@@ -59,9 +77,13 @@ struct MainWindowView: View {
     }
 
     private var toolbarButtonLabel: String {
-        if viewModel.isLoading { return "Loading..." }
-        if viewModel.isRecording { return "Recording" }
-        return "Start"
+        if viewModel.isLoading { return AppText.loading(settings.uiLanguage) }
+        return AppText.record(settings.uiLanguage)
+    }
+
+    private func startRecording(mode: RecordingMode) {
+        settings.recordingMode = mode
+        Task { await viewModel.startCapture(mode: mode) }
     }
 
     private var transcriptList: some View {
@@ -77,7 +99,8 @@ struct MainWindowView: View {
                     if !viewModel.streamingEnglish.isEmpty {
                         StreamingRow(
                             english: viewModel.streamingEnglish,
-                            chinese: viewModel.streamingChinese
+                            chinese: viewModel.streamingChinese,
+                            language: settings.uiLanguage
                         )
                         .id("streaming")
                     }
@@ -125,17 +148,18 @@ private struct CaptionRow: View {
 private struct StreamingRow: View {
     let english: String
     let chinese: String
+    let language: AppLanguage
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(.green)
-                    .frame(width: 6, height: 6)
-                Text("LIVE")
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 6, height: 6)
+                Text(AppText.live(language))
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(.green.opacity(0.8))
-            }
+                }
             Text(english)
                 .font(.system(size: 14))
                 .foregroundStyle(.white)
