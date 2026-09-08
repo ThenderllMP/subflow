@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SubFlow
+@testable import MeetingFlow
 
 @Suite("ModelDownloader")
 struct ModelDownloaderTests {
@@ -145,7 +145,7 @@ struct ModelDownloaderTests {
 
     private func makeTempRoot() throws -> URL {
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("subflow-test-\(UUID().uuidString)")
+            .appendingPathComponent("meetingflow-test-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
     }

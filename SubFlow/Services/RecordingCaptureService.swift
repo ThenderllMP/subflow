@@ -4,7 +4,7 @@ import ScreenCaptureKit
 final class RecordingCaptureService: NSObject, @unchecked Sendable {
     private let mode: RecordingMode
     private let outputURL: URL
-    private let audioQueue = DispatchQueue(label: "SubFlow.RecordingCaptureService.audio")
+    private let audioQueue = DispatchQueue(label: "MeetingFlow.RecordingCaptureService.audio")
     private var stream: SCStream?
     private var recordingOutput: SCRecordingOutput?
     private var audioFile: AVAudioFile?

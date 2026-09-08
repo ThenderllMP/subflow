@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SubFlow
+@testable import MeetingFlow
 
 private func resetCaptionSettingsDefaults() {
     let defaults = UserDefaults.standard

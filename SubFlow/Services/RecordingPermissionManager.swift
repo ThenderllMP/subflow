@@ -21,7 +21,7 @@ enum RecordingPermissionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .screenRecordingDenied:
-            return "Screen recording permission is still not active. Open System Settings > Privacy & Security > Screen Recording, enable SubFlow, then quit and reopen the app."
+            return "Screen recording permission is still not active. Open System Settings > Privacy & Security > Screen Recording, enable MeetingFlow, then quit and reopen the app."
         }
     }
 

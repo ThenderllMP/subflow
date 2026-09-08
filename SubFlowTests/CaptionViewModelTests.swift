@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SubFlow
+@testable import MeetingFlow
 
 // MARK: - Basic State
 

@@ -1,6 +1,6 @@
 import Testing
 import Foundation
-@testable import SubFlow
+@testable import MeetingFlow
 
 // AppLogger tests must run serially since they share a single log file
 @Suite(.serialized)
@@ -10,7 +10,7 @@ struct AppLoggerTests {
     }
 
     @Test func pathEndsWithCorrectFilename() {
-        #expect(AppLogger.path.hasSuffix("SubFlow.log"))
+        #expect(AppLogger.path.hasSuffix("MeetingFlow.log"))
     }
 
     @Test func clearAndLogWritesContent() {

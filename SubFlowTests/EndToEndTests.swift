@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import AppKit
-@testable import SubFlow
+@testable import MeetingFlow
 
 // MARK: - Caption Pipeline End-to-End Tests
 
@@ -22,20 +22,20 @@ import AppKit
 
     // Phase 3: Move to history, start next sentence
     vm.addCaption(english: "Hello everyone", chinese: "大家好")
-    vm.streamingEnglish = "Welcome to SubFlow"
+    vm.streamingEnglish = "Welcome to MeetingFlow"
     vm.streamingChinese = ""
     #expect(vm.captionHistory.count == 1)
-    #expect(vm.streamingEnglish == "Welcome to SubFlow")
+    #expect(vm.streamingEnglish == "Welcome to MeetingFlow")
     #expect(vm.streamingChinese.isEmpty)
 
     // Phase 4: Second sentence completes
-    vm.streamingChinese = "欢迎使用 SubFlow"
+    vm.streamingChinese = "欢迎使用 MeetingFlow"
     vm.addCaption(english: vm.streamingEnglish, chinese: vm.streamingChinese)
     vm.streamingEnglish = ""
     vm.streamingChinese = ""
     #expect(vm.captionHistory.count == 2)
     #expect(vm.recentCaptions.count == 2)
-    #expect(vm.recentCaptions[1].englishText == "Welcome to SubFlow")
+    #expect(vm.recentCaptions[1].englishText == "Welcome to MeetingFlow")
 }
 
 /// Long session with recentCaptions sliding window
