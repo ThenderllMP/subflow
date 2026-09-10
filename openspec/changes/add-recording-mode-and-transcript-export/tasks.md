@@ -18,3 +18,11 @@
 
 - [x] 4.1 Add or update tests for recording preference persistence, session folder creation, transcript export toggling, and capture-mode gating, and verify `xcodebuild test -project CapiX.xcodeproj -scheme CapiXTests -destination 'platform=macOS'` passes.
 - [x] 4.2 Run a clean app build and verify `xcodebuild build -project CapiX.xcodeproj -scheme CapiX -destination 'platform=macOS' -configuration Debug` succeeds.
+
+## 5. Translation-only operation
+
+- [x] 5.1 Add a persisted translation-only preference and expose it as a localized switch in the settings and capture controls.
+- [x] 5.2 Add a non-persistent system-audio capture path that feeds the existing Moonshine and Apple Translation pipeline without preparing a recording workspace or creating media/transcript files.
+- [x] 5.3 Update capture state, status labels, and stop behavior so translation-only operation remains distinguishable and safely finalizes any in-flight subtitle without recording artifacts.
+- [x] 5.4 Add tests for preference persistence, recording-workspace bypass, transcript-export override, and translation-only capture gating.
+- [x] 5.5 Run the full test suite and a clean Debug build.

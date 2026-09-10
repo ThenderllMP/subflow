@@ -9,6 +9,8 @@ CapiX already produces live bilingual subtitles, but it does not yet preserve a 
   - screen recording with system audio
   - audio-only recording with system audio
 - Add an optional switch to export subtitle content into a transcript document while recording.
+- Add a translation-only switch that keeps live transcription and translation active without
+  creating a recording session, media file, or transcript document.
 - Add a configurable root path for recording output.
 - Create a new session folder under the chosen root path for every recording run.
 - Store all recording-related artifacts for that session inside the session folder.
@@ -25,4 +27,4 @@ CapiX already produces live bilingual subtitles, but it does not yet preserve a 
 
 ## Impact
 
-Affected areas include the menu bar UI, settings UI, recording state management, audio/screen capture, subtitle persistence, file system output, and the recording session lifecycle. This also introduces new user-facing files under the configured recording path.
+Affected areas include the menu bar UI, settings UI, recording state management, audio/screen capture, subtitle persistence, file system output, and the recording session lifecycle. Translation-only operation also requires a non-persistent capture path that bypasses recording workspace creation while preserving the existing live subtitle pipeline.

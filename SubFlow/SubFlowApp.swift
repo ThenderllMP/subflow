@@ -44,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         viewModel.preferredRecordingMode = settings.recordingMode
         viewModel.preferredRecordingRootPath = settings.recordingOutputRootPath
         viewModel.transcriptExportEnabled = settings.transcriptExportEnabled
+        viewModel.preferredTranslationOnly = settings.translationOnlyEnabled
         viewModel.preloadModel(modelId: settings.selectedModelId)
     }
 
@@ -61,7 +62,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 if FileManager.default.fileExists(atPath: togglePath) {
                     try? FileManager.default.removeItem(atPath: togglePath)
                     AppLogger.log("Received file toggle trigger")
-                    await MainActor.run { vm.toggleCapture(mode: self.settings.recordingMode) }
+                    await MainActor.run {
+                        vm.toggleCapture(
+                            mode: self.settings.recordingMode,
+                            translationOnly: self.settings.translationOnlyEnabled
+                        )
+                    }
                 }
             }
         }
@@ -243,7 +249,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setupHotkey() {
         let manager = HotkeyManager {
             Task { @MainActor in
-                self.viewModel.toggleCapture(mode: self.settings.recordingMode)
+                self.viewModel.toggleCapture(
+                    mode: self.settings.recordingMode,
+                    translationOnly: self.settings.translationOnlyEnabled
+                )
             }
         }
         manager.register()
@@ -309,12 +318,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             _ = settings.recordingMode
             _ = settings.recordingOutputRootPath
             _ = settings.transcriptExportEnabled
+            _ = settings.translationOnlyEnabled
         } onChange: {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.viewModel.preferredRecordingMode = self.settings.recordingMode
                 self.viewModel.preferredRecordingRootPath = self.settings.recordingOutputRootPath
                 self.viewModel.transcriptExportEnabled = self.settings.transcriptExportEnabled
+                self.viewModel.preferredTranslationOnly = self.settings.translationOnlyEnabled
                 self.observeRecordingPreferences()
             }
         }

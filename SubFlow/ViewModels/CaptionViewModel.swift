@@ -12,7 +12,9 @@ final class CaptionViewModel {
     var preferredRecordingMode: RecordingMode = .screenAndAudio
     var preferredRecordingRootPath: String = CaptionSettings.defaultRecordingRootPath
     var transcriptExportEnabled = false
+    var preferredTranslationOnly = false
     var currentRecordingMode: RecordingMode?
+    var isTranslationOnlyActive = false
     /// In-flight model download progress in `[0, 1]`. `nil` when no download is
     /// running (either already on disk or not yet started).
     var downloadProgress: Double?
@@ -236,17 +238,29 @@ final class CaptionViewModel {
 
     // MARK: - Capture Control
 
-    func toggleCapture(mode: RecordingMode? = nil) {
+    func toggleCapture(
+        mode: RecordingMode? = nil,
+        translationOnly: Bool? = nil
+    ) {
         AppLogger.log("toggleCapture called, isRecording=\(isRecording), isModelReady=\(isModelReady)")
         if isRecording {
             stopCapture()
         } else {
-            Task { await startCapture(mode: mode ?? preferredRecordingMode) }
+            Task {
+                await startCapture(
+                    mode: mode ?? preferredRecordingMode,
+                    translationOnly: translationOnly
+                )
+            }
         }
     }
 
-    func startCapture(mode: RecordingMode = .screenAndAudio) async {
+    func startCapture(
+        mode: RecordingMode = .screenAndAudio,
+        translationOnly: Bool? = nil
+    ) async {
         guard !isRecording else { return }
+        let translationOnly = translationOnly ?? preferredTranslationOnly
 
         if !isModelReady {
             preloadModel()
@@ -262,15 +276,17 @@ final class CaptionViewModel {
         do {
             try RecordingPermissionManager.ensureScreenRecordingAccess()
 
-            let sessionPaths = try RecordingWorkspace.prepareSession(
+            let plan = try CaptureSessionPlan.prepare(
+                translationOnly: translationOnly,
                 rootPath: preferredRecordingRootPath,
-                mode: mode
+                mode: mode,
+                transcriptExportEnabled: transcriptExportEnabled
             )
-            let audioService = RecordingCaptureService(mode: mode, outputURL: sessionPaths.mediaURL)
+            let audioService = RecordingCaptureService(output: plan.output)
             let audioStream = audioService.makeAudioStream()
 
             let recordingTranscriptWriter: TranscriptDocumentWriter?
-            if transcriptExportEnabled {
+            if plan.shouldExportTranscript, let sessionPaths = plan.paths {
                 recordingTranscriptWriter = try TranscriptDocumentWriter(
                     sessionURL: sessionPaths.sessionURL,
                     transcriptURL: sessionPaths.transcriptURL,
@@ -280,14 +296,17 @@ final class CaptionViewModel {
                 recordingTranscriptWriter = nil
             }
 
-            let session = ActiveRecordingSession(
-                mode: mode,
-                paths: sessionPaths,
-                transcriptWriter: recordingTranscriptWriter
-            )
+            let session = plan.paths.map { sessionPaths in
+                ActiveRecordingSession(
+                    mode: mode,
+                    paths: sessionPaths,
+                    transcriptWriter: recordingTranscriptWriter
+                )
+            }
 
             self.activeRecordingSession = session
-            self.currentRecordingMode = mode
+            self.currentRecordingMode = plan.recordingMode
+            self.isTranslationOnlyActive = plan.isTranslationOnly
             self.audioCaptureService = audioService
             self.isRecording = true
             self.setStatus(nil)
@@ -295,7 +314,8 @@ final class CaptionViewModel {
 
             runPipeline(audioStream: audioStream)
             try await audioService.start()
-            AppLogger.log("Recording capture started: \(mode.displayName)")
+            let activity = translationOnly ? "live translation" : mode.displayName
+            AppLogger.log("Capture started: \(activity)")
         } catch {
             AppLogger.log("Failed to start capture: \(error.localizedDescription)")
             setStatus(Self.captureFailureState(for: error))
@@ -310,6 +330,7 @@ final class CaptionViewModel {
             audioCaptureService = nil
             isRecording = false
             currentRecordingMode = nil
+            isTranslationOnlyActive = false
         }
     }
 
@@ -320,6 +341,7 @@ final class CaptionViewModel {
 
         isRecording = false
         currentRecordingMode = nil
+        isTranslationOnlyActive = false
         activeRecordingSession = nil
         accumulatorTask?.cancel()
         accumulatorTask = nil

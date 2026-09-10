@@ -6,6 +6,8 @@ CapiX already has a live subtitle pipeline, a floating subtitle window, model lo
 
 **Goals:**
 - Add a user-facing recording entry point with screen and audio-only modes.
+- Allow users to run the existing live transcription and translation pipeline without saving
+  any recording artifacts.
 - Persist each recording run in its own session folder under a configurable root path.
 - Optionally write bilingual subtitle pairs into a session transcript document while recording.
 - Keep the current live subtitle overlay and translation flow intact.
@@ -27,6 +29,17 @@ CapiX already has a live subtitle pipeline, a floating subtitle window, model lo
 - Treat recording mode as a pre-start choice that stays fixed for the session.
   - Rationale: changing capture shape mid-session complicates the output set and the user mental model.
   - Alternative considered: allow switching between screen and audio-only while recording. Rejected for complexity and unclear UX.
+- Model translation-only operation as an independent persisted switch that takes precedence
+  over the selected recording mode and transcript-export preference.
+  - Rationale: users can keep their preferred recording mode configured while temporarily
+    choosing a privacy- and storage-friendly live-translation session.
+  - Alternative considered: add a third recording mode. Rejected because translation-only
+    operation deliberately does not create a recording session or recording artifact.
+- Reuse ScreenCaptureKit's system-audio stream in translation-only operation, but do not attach
+  an `SCRecordingOutput`, open an `AVAudioFile`, prepare a recording workspace, or create a
+  transcript writer.
+  - Rationale: Moonshine still requires live 16 kHz audio samples, while persistence should be
+    bypassed at its source rather than creating and later deleting files.
 - Write the transcript as a text-based document in the session folder.
   - Rationale: the subtitle stream is already textual and a text document is easy to append, inspect, and archive.
   - Alternative considered: generate a Word document immediately. Rejected because it adds heavier document handling without changing the user outcome.
@@ -39,6 +52,8 @@ CapiX already has a live subtitle pipeline, a floating subtitle window, model lo
 - [System permission failure] Screen recording and audio capture can fail if the user has not granted the required macOS permissions → surface the error early and do not start a partial session.
 - [Partial transcript on crash] A session may end before the transcript is fully finalized → preserve already written artifacts and finalize on stop whenever possible.
 - [Storage growth] Recording sessions can generate large folders quickly → keep all outputs under one user-managed root so the user can prune old sessions easily.
+- [Ambiguous active state] The app currently describes all active capture as recording → show
+  translation-only state distinctly while continuing to use the same start/stop control.
 - [UI complexity] Adding mode selection and export settings increases the settings surface → keep the controls grouped under one recording section to limit clutter.
 
 ## Migration Plan

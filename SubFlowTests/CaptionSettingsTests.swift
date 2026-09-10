@@ -12,6 +12,7 @@ private func resetCaptionSettingsDefaults() {
         "recordingOutputRootPath",
         "recordingMode",
         "transcriptExportEnabled",
+        "translationOnlyEnabled",
         "uiLanguage",
     ] {
         defaults.removeObject(forKey: key)
@@ -49,6 +50,7 @@ private func resetCaptionSettingsDefaults() {
     #expect(settings.fontSize == 15)
     #expect(settings.selectedModelId == ASRModel.defaultModel.id)
     #expect(settings.uiLanguage == .english)
+    #expect(settings.translationOnlyEnabled == false)
 }
 
 @Test @MainActor func captionSettingsSelectedModelProperty() {

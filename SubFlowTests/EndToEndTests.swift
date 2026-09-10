@@ -88,6 +88,7 @@ import AppKit
     defaults.removeObject(forKey: "recordingOutputRootPath")
     defaults.removeObject(forKey: "recordingMode")
     defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "translationOnlyEnabled")
     defaults.removeObject(forKey: "uiLanguage")
 
     let settings1 = CaptionSettings()
@@ -105,6 +106,7 @@ import AppKit
     defaults.removeObject(forKey: "recordingOutputRootPath")
     defaults.removeObject(forKey: "recordingMode")
     defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "translationOnlyEnabled")
 }
 
 @Test @MainActor func settingsInvalidModelIdFallbackEndToEnd() {
@@ -112,6 +114,7 @@ import AppKit
     defaults.removeObject(forKey: "recordingOutputRootPath")
     defaults.removeObject(forKey: "recordingMode")
     defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "translationOnlyEnabled")
     defaults.removeObject(forKey: "uiLanguage")
     defaults.set("nonexistent-model-id", forKey: "selectedModelId")
     let settings = CaptionSettings()

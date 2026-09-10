@@ -7,6 +7,43 @@ struct RecordingSessionPaths: Sendable {
     let transcriptURL: URL
 }
 
+struct CaptureSessionPlan: Sendable {
+    let output: RecordingCaptureOutput
+    let paths: RecordingSessionPaths?
+    let shouldExportTranscript: Bool
+
+    var isTranslationOnly: Bool { paths == nil }
+    var recordingMode: RecordingMode? { output.recordingMode }
+
+    static func prepare(
+        translationOnly: Bool,
+        rootPath: String,
+        mode: RecordingMode,
+        transcriptExportEnabled: Bool
+    ) throws -> CaptureSessionPlan {
+        if translationOnly {
+            return CaptureSessionPlan(
+                output: .none,
+                paths: nil,
+                shouldExportTranscript: false
+            )
+        }
+
+        let paths = try RecordingWorkspace.prepareSession(rootPath: rootPath, mode: mode)
+        let output: RecordingCaptureOutput = switch mode {
+        case .screenAndAudio:
+            .screenAndAudio(paths.mediaURL)
+        case .audioOnly:
+            .audioOnly(paths.mediaURL)
+        }
+        return CaptureSessionPlan(
+            output: output,
+            paths: paths,
+            shouldExportTranscript: transcriptExportEnabled
+        )
+    }
+}
+
 enum RecordingWorkspaceError: LocalizedError {
     case rootUnavailable(URL)
     case rootNotWritable(URL)

@@ -22,16 +22,23 @@ struct SettingsView: View {
             }
 
             Section {
+                Toggle(AppText.translationOnly(language), isOn: $settings.translationOnlyEnabled)
+                    .disabled(viewModel.isRecording)
+
+                Text(AppText.translationOnlyHint(language))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
                 Picker(AppText.captureMode(language), selection: $settings.recordingMode) {
                     ForEach(RecordingMode.allCases) { mode in
                         Text(mode.shortLabel(in: language)).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
-                .disabled(viewModel.isRecording)
+                .disabled(viewModel.isRecording || settings.translationOnlyEnabled)
 
                 Toggle(AppText.exportSubtitles(language), isOn: $settings.transcriptExportEnabled)
-                    .disabled(viewModel.isRecording)
+                    .disabled(viewModel.isRecording || settings.translationOnlyEnabled)
 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .center, spacing: 8) {
@@ -43,13 +50,14 @@ struct SettingsView: View {
                         Button(action: chooseRecordingFolder) {
                             Label(AppText.chooseFolder(language), systemImage: "folder")
                         }
-                        .disabled(viewModel.isRecording)
+                        .disabled(viewModel.isRecording || settings.translationOnlyEnabled)
                     }
 
                     Text(AppText.recordingFolderHint(language))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .disabled(settings.translationOnlyEnabled)
 
                 if viewModel.isRecording {
                     Text(AppText.stopBeforeChangingRecordingSettings(language))

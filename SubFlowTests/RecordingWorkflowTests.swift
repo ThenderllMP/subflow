@@ -7,20 +7,68 @@ import Testing
     defaults.removeObject(forKey: "recordingOutputRootPath")
     defaults.removeObject(forKey: "recordingMode")
     defaults.removeObject(forKey: "transcriptExportEnabled")
+    defaults.removeObject(forKey: "translationOnlyEnabled")
 
     let settings = CaptionSettings()
     settings.recordingOutputRootPath = "/tmp/capix-recordings"
     settings.recordingMode = .audioOnly
     settings.transcriptExportEnabled = true
+    settings.translationOnlyEnabled = true
 
     #expect(defaults.string(forKey: "recordingOutputRootPath") == "/tmp/capix-recordings")
     #expect(defaults.string(forKey: "recordingMode") == RecordingMode.audioOnly.rawValue)
     #expect(defaults.bool(forKey: "transcriptExportEnabled") == true)
+    #expect(defaults.bool(forKey: "translationOnlyEnabled") == true)
 
     let reloaded = CaptionSettings()
     #expect(reloaded.recordingOutputRootPath == "/tmp/capix-recordings")
     #expect(reloaded.recordingMode == .audioOnly)
     #expect(reloaded.transcriptExportEnabled == true)
+    #expect(reloaded.translationOnlyEnabled == true)
+}
+
+@Test func translationOnlyPlanBypassesWorkspaceAndTranscriptExport() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("capix-translation-only-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let plan = try CaptureSessionPlan.prepare(
+        translationOnly: true,
+        rootPath: root.path,
+        mode: .screenAndAudio,
+        transcriptExportEnabled: true
+    )
+
+    #expect(plan.output == .none)
+    #expect(plan.paths == nil)
+    #expect(plan.recordingMode == nil)
+    #expect(plan.isTranslationOnly)
+    #expect(plan.shouldExportTranscript == false)
+    #expect(!FileManager.default.fileExists(atPath: root.path))
+}
+
+@Test func persistentCapturePlanUsesSelectedModeAndWorkspace() throws {
+    let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("capix-capture-plan-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+
+    let plan = try CaptureSessionPlan.prepare(
+        translationOnly: false,
+        rootPath: root.path,
+        mode: .audioOnly,
+        transcriptExportEnabled: true
+    )
+
+    #expect(plan.recordingMode == .audioOnly)
+    #expect(!plan.isTranslationOnly)
+    #expect(plan.shouldExportTranscript)
+    #expect(plan.paths != nil)
+    guard case .audioOnly(let mediaURL) = plan.output else {
+        Issue.record("Expected an audio-only recording output")
+        return
+    }
+    #expect(mediaURL.pathExtension == "caf")
+    #expect(FileManager.default.fileExists(atPath: plan.paths?.sessionURL.path ?? ""))
 }
 
 @Test func recordingWorkspaceCreatesPerSessionFolders() throws {

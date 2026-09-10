@@ -1,9 +1,25 @@
 import AVFoundation
 import ScreenCaptureKit
 
+enum RecordingCaptureOutput: Equatable, Sendable {
+    case none
+    case screenAndAudio(URL)
+    case audioOnly(URL)
+
+    var recordingMode: RecordingMode? {
+        switch self {
+        case .none:
+            return nil
+        case .screenAndAudio:
+            return .screenAndAudio
+        case .audioOnly:
+            return .audioOnly
+        }
+    }
+}
+
 final class RecordingCaptureService: NSObject, @unchecked Sendable {
-    private let mode: RecordingMode
-    private let outputURL: URL
+    private let output: RecordingCaptureOutput
     private let audioQueue = DispatchQueue(label: "CapiX.RecordingCaptureService.audio")
     private var stream: SCStream?
     private var recordingOutput: SCRecordingOutput?
@@ -12,9 +28,8 @@ final class RecordingCaptureService: NSObject, @unchecked Sendable {
     private var continuation: AsyncStream<[Float]>.Continuation?
     private var _audioStream: AsyncStream<[Float]>?
 
-    init(mode: RecordingMode, outputURL: URL) {
-        self.mode = mode
-        self.outputURL = outputURL
+    init(output: RecordingCaptureOutput) {
+        self.output = output
         super.init()
     }
 
@@ -46,7 +61,8 @@ final class RecordingCaptureService: NSObject, @unchecked Sendable {
         let stream = SCStream(filter: filter, configuration: configuration, delegate: nil)
         try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: audioQueue)
 
-        if mode == .screenAndAudio {
+        switch output {
+        case .screenAndAudio(let outputURL):
             let recordingConfiguration = SCRecordingOutputConfiguration()
             recordingConfiguration.outputURL = outputURL
             recordingConfiguration.outputFileType = .mp4
@@ -58,7 +74,7 @@ final class RecordingCaptureService: NSObject, @unchecked Sendable {
 
             try stream.addRecordingOutput(recordingOutput)
             self.recordingOutput = recordingOutput
-        } else {
+        case .audioOnly(let outputURL):
             let format = AVAudioFormat(
                 commonFormat: .pcmFormatFloat32,
                 sampleRate: 16_000,
@@ -79,6 +95,8 @@ final class RecordingCaptureService: NSObject, @unchecked Sendable {
             } catch {
                 throw RecordingCaptureError.audioFileFailed(outputURL)
             }
+        case .none:
+            break
         }
 
         try await stream.startCapture()
@@ -128,7 +146,7 @@ extension RecordingCaptureService: SCStreamOutput {
 
         continuation?.yield(floats)
 
-        guard mode == .audioOnly, let audioFile, let audioFormat else { return }
+        guard let audioFile, let audioFormat else { return }
         guard let buffer = AVAudioPCMBuffer(
             pcmFormat: audioFormat,
             frameCapacity: AVAudioFrameCount(floats.count)

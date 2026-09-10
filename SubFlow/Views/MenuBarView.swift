@@ -23,26 +23,42 @@ struct MenuBarView: View {
 
             if viewModel.isRecording {
                 Button(action: { viewModel.stopCapture() }) {
-                    Label(AppText.stopRecording(settings.uiLanguage), systemImage: "stop.circle.fill")
+                    Label(
+                        viewModel.isTranslationOnlyActive
+                            ? AppText.stopLiveTranslation(settings.uiLanguage)
+                            : AppText.stopRecording(settings.uiLanguage),
+                        systemImage: "stop.circle.fill"
+                    )
                         .frame(maxWidth: .infinity)
                 }
                 .controlSize(.large)
                 .disabled(viewModel.isLoading && !viewModel.isModelReady)
             } else {
-                Menu {
-                    Button(action: { startRecording(mode: .screenAndAudio) }) {
-                        Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
-                    }
+                Toggle(AppText.translationOnly(settings.uiLanguage), isOn: Bindable(settings).translationOnlyEnabled)
 
-                    Button(action: { startRecording(mode: .audioOnly) }) {
-                        Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
+                if settings.translationOnlyEnabled {
+                    Button(action: startLiveTranslation) {
+                        Label(AppText.startLiveTranslation(settings.uiLanguage), systemImage: "captions.bubble")
+                            .frame(maxWidth: .infinity)
                     }
-                } label: {
-                    Label(AppText.record(settings.uiLanguage), systemImage: "record.circle")
-                        .frame(maxWidth: .infinity)
+                    .controlSize(.large)
+                    .disabled(viewModel.isLoading && !viewModel.isModelReady)
+                } else {
+                    Menu {
+                        Button(action: { startRecording(mode: .screenAndAudio) }) {
+                            Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
+                        }
+
+                        Button(action: { startRecording(mode: .audioOnly) }) {
+                            Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
+                        }
+                    } label: {
+                        Label(AppText.record(settings.uiLanguage), systemImage: "record.circle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .controlSize(.large)
+                    .disabled(viewModel.isLoading && !viewModel.isModelReady)
                 }
-                .controlSize(.large)
-                .disabled(viewModel.isLoading && !viewModel.isModelReady)
             }
 
             Divider()
@@ -66,13 +82,25 @@ struct MenuBarView: View {
 
     private func startRecording(mode: RecordingMode) {
         settings.recordingMode = mode
-        Task { await viewModel.startCapture(mode: mode) }
+        Task { await viewModel.startCapture(mode: mode, translationOnly: false) }
+    }
+
+    private func startLiveTranslation() {
+        Task {
+            await viewModel.startCapture(
+                mode: settings.recordingMode,
+                translationOnly: true
+            )
+        }
     }
 
     private var statusLabel: String {
         if !viewModel.statusMessage.isEmpty { return viewModel.statusMessage }
         if viewModel.isLoading { return viewModel.statusMessage.isEmpty ? AppText.loading(settings.uiLanguage) : viewModel.statusMessage }
         if viewModel.isRecording {
+            if viewModel.isTranslationOnlyActive {
+                return AppText.liveTranslationStatus(settings.uiLanguage)
+            }
             if let mode = viewModel.currentRecordingMode {
                 return AppText.recordingStatus(mode: mode, language: settings.uiLanguage)
             }

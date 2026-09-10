@@ -108,6 +108,12 @@ final class CaptionSettings {
         }
     }
 
+    var translationOnlyEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(translationOnlyEnabled, forKey: "translationOnlyEnabled")
+        }
+    }
+
     var selectedModel: ASRModel {
         ASRModel.available.first { $0.id == selectedModelId } ?? ASRModel.defaultModel
     }
@@ -144,5 +150,6 @@ final class CaptionSettings {
         uiLanguage = savedLanguage ?? .english
 
         transcriptExportEnabled = defaults.object(forKey: "transcriptExportEnabled") as? Bool ?? false
+        translationOnlyEnabled = defaults.object(forKey: "translationOnlyEnabled") as? Bool ?? false
     }
 }

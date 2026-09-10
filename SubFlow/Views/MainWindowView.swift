@@ -18,7 +18,12 @@ struct MainWindowView: View {
         HStack {
             if viewModel.isRecording {
                 Button(action: { viewModel.stopCapture() }) {
-                    Label(AppText.stopRecording(settings.uiLanguage), systemImage: "stop.circle.fill")
+                    Label(
+                        viewModel.isTranslationOnlyActive
+                            ? AppText.stopLiveTranslation(settings.uiLanguage)
+                            : AppText.stopRecording(settings.uiLanguage),
+                        systemImage: "stop.circle.fill"
+                    )
                         .font(.system(size: 13, weight: .semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
@@ -29,34 +34,27 @@ struct MainWindowView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Menu {
-                    Button(action: { startRecording(mode: .screenAndAudio) }) {
-                        Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
+                if settings.translationOnlyEnabled {
+                    Button(action: startLiveTranslation) {
+                        toolbarButtonContent(systemImage: "captions.bubble")
                     }
-
-                    Button(action: { startRecording(mode: .audioOnly) }) {
-                        Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
-                    }
-                } label: {
-                    HStack(spacing: 6) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .controlSize(.small)
-                        } else {
-                            Image(systemName: "record.circle")
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isLoading)
+                } else {
+                    Menu {
+                        Button(action: { startRecording(mode: .screenAndAudio) }) {
+                            Label(AppText.screenPlusAudio(settings.uiLanguage), systemImage: "display.and.arrow.down")
                         }
-                        Text(toolbarButtonLabel)
-                            .font(.system(size: 13, weight: .semibold))
+
+                        Button(action: { startRecording(mode: .audioOnly) }) {
+                            Label(AppText.audioOnly(settings.uiLanguage), systemImage: "waveform")
+                        }
+                    } label: {
+                        toolbarButtonContent(systemImage: "record.circle")
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.gray.opacity(0.15))
-                    )
+                    .menuStyle(.borderlessButton)
+                    .disabled(viewModel.isLoading)
                 }
-                .menuStyle(.borderlessButton)
-                .disabled(viewModel.isLoading)
             }
 
             if !viewModel.statusMessage.isEmpty {
@@ -78,12 +76,42 @@ struct MainWindowView: View {
 
     private var toolbarButtonLabel: String {
         if viewModel.isLoading { return AppText.loading(settings.uiLanguage) }
-        return AppText.record(settings.uiLanguage)
+        return settings.translationOnlyEnabled
+            ? AppText.startLiveTranslation(settings.uiLanguage)
+            : AppText.record(settings.uiLanguage)
+    }
+
+    private func toolbarButtonContent(systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            if viewModel.isLoading {
+                ProgressView()
+                    .controlSize(.small)
+            } else {
+                Image(systemName: systemImage)
+            }
+            Text(toolbarButtonLabel)
+                .font(.system(size: 13, weight: .semibold))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.gray.opacity(0.15))
+        )
     }
 
     private func startRecording(mode: RecordingMode) {
         settings.recordingMode = mode
-        Task { await viewModel.startCapture(mode: mode) }
+        Task { await viewModel.startCapture(mode: mode, translationOnly: false) }
+    }
+
+    private func startLiveTranslation() {
+        Task {
+            await viewModel.startCapture(
+                mode: settings.recordingMode,
+                translationOnly: true
+            )
+        }
     }
 
     private var transcriptList: some View {

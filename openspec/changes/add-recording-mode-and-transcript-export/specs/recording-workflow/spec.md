@@ -20,6 +20,23 @@ The selected mode MUST remain fixed for the duration of the session.
 - **THEN** the session captures system audio only
 - **AND** no screen video is recorded for that session
 
+### Requirement: Translation-only operation does not persist a recording
+The system MUST provide a persistent translation-only switch independent of the selected recording mode.
+When translation-only operation is enabled, the system MUST capture system audio for live Moonshine transcription and translation while producing no persistent recording artifacts.
+Translation-only operation MUST NOT create a recording session folder, media file, or transcript document, even when transcript export is enabled.
+The live English preview, completed bilingual subtitles, caption history, and normal stop behavior MUST remain available.
+
+#### Scenario: Start translation-only operation
+- **WHEN** the user starts capture while translation-only operation is enabled
+- **THEN** the system captures system audio for live transcription and translation
+- **AND** no recording session folder is created
+- **AND** no MP4, CAF, or transcript document is created
+
+#### Scenario: Resume persistent recording
+- **WHEN** the user disables translation-only operation and starts capture
+- **THEN** the selected screen-recording or audio-only mode controls the recording output
+- **AND** the existing recording-session behavior applies
+
 ### Requirement: Recording output root is configurable
 The system MUST allow the user to configure a recording output root path in settings.
 The configured path MUST exist and be writable before a recording session starts.

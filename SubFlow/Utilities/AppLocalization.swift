@@ -22,6 +22,8 @@ enum AppText {
     static func settings(_ language: AppLanguage) -> String { localized("Settings", "设置", language: language) }
     static func recording(_ language: AppLanguage) -> String { localized("Recording", "录制", language: language) }
     static func captureMode(_ language: AppLanguage) -> String { localized("Capture Mode", "录制方式", language: language) }
+    static func translationOnly(_ language: AppLanguage) -> String { localized("Live translation only", "仅实时翻译", language: language) }
+    static func translationOnlyHint(_ language: AppLanguage) -> String { localized("Show live bilingual subtitles without saving recording files or a transcript.", "仅显示实时双语字幕，不保存录制文件或字幕文档。", language: language) }
     static func exportSubtitles(_ language: AppLanguage) -> String { localized("Export subtitles to transcript", "将字幕导出为会议对话", language: language) }
     static func recordingOutputFolder(_ language: AppLanguage) -> String { localized("Recording output folder", "录制输出路径", language: language) }
     static func chooseFolder(_ language: AppLanguage) -> String { localized("Choose Folder", "选择文件夹", language: language) }
@@ -40,6 +42,8 @@ enum AppText {
     static func openTranscript(_ language: AppLanguage) -> String { localized("Open Transcript", "打开字幕文档", language: language) }
     static func quit(_ language: AppLanguage) -> String { localized("Quit", "退出", language: language) }
     static func record(_ language: AppLanguage) -> String { localized("Record", "录制", language: language) }
+    static func startLiveTranslation(_ language: AppLanguage) -> String { localized("Start Live Translation", "开始实时翻译", language: language) }
+    static func stopLiveTranslation(_ language: AppLanguage) -> String { localized("Stop Live Translation", "停止实时翻译", language: language) }
     static func stopRecording(_ language: AppLanguage) -> String { localized("Stop Recording", "停止录制", language: language) }
     static func screenPlusAudio(_ language: AppLanguage) -> String { localized("Screen + Audio", "屏幕 + 音频", language: language) }
     static func audioOnly(_ language: AppLanguage) -> String { localized("Audio Only", "仅音频", language: language) }
@@ -48,6 +52,7 @@ enum AppText {
     static func idle(_ language: AppLanguage) -> String { localized("Idle", "空闲", language: language) }
     static func live(_ language: AppLanguage) -> String { localized("LIVE", "实时", language: language) }
     static func recordingStatus(mode: RecordingMode, language: AppLanguage) -> String { localized("Recording · \(mode.displayName(in: .english))", "录制 · \(mode.displayName(in: .chinese))", language: language) }
+    static func liveTranslationStatus(_ language: AppLanguage) -> String { localized("Live Translation", "实时翻译中", language: language) }
     static func loadingModel(_ modelName: String, language: AppLanguage) -> String { localized("Loading \(modelName)...", "正在加载 \(modelName)...", language: language) }
     static func downloadingModel(_ modelName: String, language: AppLanguage) -> String { localized("Downloading \(modelName)...", "正在下载 \(modelName)...", language: language) }
     static func modelLoadFailed(_ detail: String, language: AppLanguage) -> String { localized("Model load failed: \(detail)", "模型加载失败：\(detail)", language: language) }
